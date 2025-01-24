@@ -36,6 +36,7 @@ pub struct PlannerApp {
     selected_activity_new_name: String,
     selected_activity_new_start_time: (u8, u8),
     selected_activity_new_end_time: (u8, u8),
+    activity_to_delete_id: Option<u32>,
     update_activity_window_open: bool,
     close_update_activity_window: bool,
 }
@@ -70,6 +71,7 @@ impl PlannerApp {
             selected_activity_new_name: "".to_string(),
             selected_activity_new_start_time: (0, 0),
             selected_activity_new_end_time: (0, 0),
+            activity_to_delete_id: None,
             update_activity_window_open: false,
             close_update_activity_window: false,
         })
@@ -129,6 +131,11 @@ impl eframe::App for PlannerApp {
             //         _ = std::fs::remove_file("plan.json");
             //     }
             // });
+
+            if let Some(activity_id) = self.activity_to_delete_id {
+                self.activities.retain(|activity| activity.id != activity_id);
+                self.activity_to_delete_id = None;
+            }
 
             if self.close_add_activity_window {
                 self.add_activity_window_open = false;
@@ -209,6 +216,10 @@ impl eframe::App for PlannerApp {
                                         self.close_update_activity_window = true;
                                     }
                                     if ui.button("Cancel").clicked() {
+                                        self.close_update_activity_window = true;
+                                    }
+                                    if ui.button("Delete").clicked() {
+                                        self.activity_to_delete_id = Some(activity_id);
                                         self.close_update_activity_window = true;
                                     }
                                 });
