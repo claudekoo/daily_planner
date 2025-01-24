@@ -1,25 +1,43 @@
-// use super::color_palette::*;
 use eframe::egui;
 use rfd::FileDialog;
 use serde_json;
 use super::color_palette::*;
 use super::structs::*;
 
+pub(crate) fn load_icon() -> egui::IconData {
+	let (icon_rgba, icon_width, icon_height) = {
+		let icon = include_bytes!("icon.ico");
+		let image = image::load_from_memory(icon)
+			.expect("Failed to open icon path")
+			.into_rgba8();
+		let (width, height) = image.dimensions();
+		let rgba = image.into_raw();
+		(rgba, width, height)
+	};
+	
+	egui::IconData {
+		rgba: icon_rgba,
+		width: icon_width,
+		height: icon_height,
+	}
+}
+
 pub fn show_ui(app: PlannerApp) -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder {
             window_level: Some(egui::viewport::WindowLevel::AlwaysOnTop),
             maximize_button: Some(false),
-            taskbar: Some(false),
             resizable: Some(false),
             inner_size: Some(egui::vec2(273.0, 871.0)),
+            icon: Some(load_icon().into()),
             ..Default::default()
         },
         centered: true,
         ..Default::default()
-    };
+    };    
+
     eframe::run_native(
-        "Daily Planner",
+        "DailyPlanner",
         options,
         Box::new(|_cc| Ok(Box::new(app))),
     )
@@ -317,8 +335,12 @@ impl eframe::App for PlannerApp {
                 egui::Layout::top_down(egui::Align::Min),
                 |ui| {
                     ui.painter().line_segment(
-                        [egui::pos2(0.0, current_time_y), egui::pos2(263.0, current_time_y)],
+                        [egui::pos2(0.0, current_time_y), egui::pos2(255.0, current_time_y)],
                         (1.0, RED),
+                    );
+                    ui.painter().line_segment(
+                        [egui::pos2(255.0, current_time_y), egui::pos2(264.0, current_time_y)],
+                        (3.0, RED),
                     );
                 },
             );
