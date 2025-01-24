@@ -124,6 +124,7 @@ impl PlannerApp {
                 if activity.is_now {
                     Notification::new()
                         .appname("DailyPlanner")
+                        .summary("Activity Started")
                         .body(&format!("{} has started.", activity.name))
                         .icon("icon")
                         .show()
@@ -131,6 +132,7 @@ impl PlannerApp {
                 } else {
                     Notification::new()
                         .appname("DailyPlanner")
+                        .summary("Activity Ended")
                         .body(&format!("{} has ended.", activity.name))
                         .icon("icon")
                         .show()
