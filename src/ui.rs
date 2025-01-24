@@ -11,7 +11,7 @@ pub fn show_ui(app: PlannerApp) -> Result<(), eframe::Error> {
             maximize_button: Some(false),
             taskbar: Some(false),
             resizable: Some(false),
-            inner_size: Some(egui::vec2(257.0, 838.0)),
+            inner_size: Some(egui::vec2(273.0, 838.0)),
             ..Default::default()
         },
         centered: true,
@@ -103,21 +103,32 @@ impl eframe::App for PlannerApp {
             spacing.item_spacing = egui::vec2(10.0, 10.0);
             spacing.button_padding = egui::vec2(10.0, 5.0);
 
-            // Add Activity / Save Plan buttons
+            // Add Activity / Delete All buttons
             ui.horizontal(|ui| {
                 if ui.button("New Activity").clicked() {
                     self.add_activity_window_open = true;
+                }
+                if ui.button("Delete All").clicked() {
+                    // just delete all activities
+                    self.activities = vec![];
                 }
                 if ui.button("Save Plan").clicked() {
                     let activities_json = serde_json::to_string(&self.activities).unwrap();
                     std::fs::write("plan.json", activities_json).expect("Failed to save plan");
                 }
-                if ui.button("Delete All").clicked() {
-                    // just delete all activities and delete the file too
-                    self.activities = vec![];
-                    _ = std::fs::remove_file("plan.json");
-                }
             });
+
+            // ui.horizontal(|ui| {
+            //     if ui.button("Save Plan").clicked() {
+            //         let activities_json = serde_json::to_string(&self.activities).unwrap();
+            //         std::fs::write("plan.json", activities_json).expect("Failed to save plan");
+            //     }
+            //     if ui.button("Delete Save").clicked() {
+            //         // just delete all activities and delete the file too
+            //         self.activities = vec![];
+            //         _ = std::fs::remove_file("plan.json");
+            //     }
+            // });
 
             if self.close_add_activity_window {
                 self.add_activity_window_open = false;
@@ -244,7 +255,7 @@ impl eframe::App for PlannerApp {
                     40.0 + 33.0 * (activity.start_time.hour() as f32 + activity.start_time.minute() as f32 / 60.0),
                 );
                 let fixed_size = egui::vec2(
-                    185.0,
+                    200.0,
                     33.0 * (activity.end_time.hour() as f32 + activity.end_time.minute() as f32 / 60.0)
                         - 33.0 * (activity.start_time.hour() as f32 + activity.start_time.minute() as f32 / 60.0),
                 );
@@ -257,7 +268,6 @@ impl eframe::App for PlannerApp {
                         if ui.add(egui::Label::new(
                             egui::RichText::new(&activity.name)
                                 .color(activity_font_color)
-                                .text_style(egui::TextStyle::Heading) // Make the text bold
                         ).sense(egui::Sense::click())).clicked() {
                             self.selected_activity_id_for_update = Some(activity.id);
                             self.selected_activity_new_name = activity.name().to_string();
