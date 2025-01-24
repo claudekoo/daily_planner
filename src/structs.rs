@@ -74,4 +74,16 @@ impl Plan {
         let current_time = SimpleTime::from_now();
         self.is_now = self.is_now(current_time);
     }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn start_time(&self) -> &SimpleTime {
+        &self.start_time
+    }
+
+    pub fn end_time(&self) -> &SimpleTime {
+        &self.end_time
+    }
 }

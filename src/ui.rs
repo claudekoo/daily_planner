@@ -9,8 +9,9 @@ pub fn show_ui(app: PlannerApp) -> Result<(), eframe::Error> {
         viewport: egui::ViewportBuilder {
             window_level: Some(egui::viewport::WindowLevel::AlwaysOnTop),
             maximize_button: Some(false),
+            taskbar: Some(false),
             resizable: Some(false),
-            inner_size: Some(egui::vec2(257.0, 832.0)),
+            inner_size: Some(egui::vec2(257.0, 838.0)),
             ..Default::default()
         },
         centered: true,
@@ -31,8 +32,11 @@ pub struct PlannerApp {
     new_plan_name: String,
     new_plan_start_time: (u8, u8),
     new_plan_end_time: (u8, u8),
-    selected_plan_id_for_delete: Option<u32>,
-    confirm_delete_plan_window_open: bool,
+    selected_plan_id_for_update: Option<u32>,
+    selected_plan_new_name: String,
+    selected_plan_new_start_time: (u8, u8),
+    selected_plan_new_end_time: (u8, u8),
+    update_plan_window_open: bool,
     close_update_plan_window: bool,
 }
 
@@ -62,8 +66,11 @@ impl PlannerApp {
             new_plan_name: "".to_string(),
             new_plan_start_time: (0, 0),
             new_plan_end_time: (0, 0),
-            selected_plan_id_for_delete: None,
-            confirm_delete_plan_window_open: false,
+            selected_plan_id_for_update: None,
+            selected_plan_new_name: "".to_string(),
+            selected_plan_new_start_time: (0, 0),
+            selected_plan_new_end_time: (0, 0),
+            update_plan_window_open: false,
             close_update_plan_window: false,
         })
     }
@@ -125,16 +132,16 @@ impl eframe::App for PlannerApp {
                     .resizable(false)
                     .open(&mut self.add_plan_window_open)
                     .show(ui.ctx(), |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label("Name:");
-                            ui.text_edit_singleline(&mut self.new_plan_name);
-                        });
-                        ui.horizontal(|ui| {
-                            time_picker(ui, "Start:", &mut self.new_plan_start_time, "new_plan_start_time");
-                        });
-                        ui.horizontal(|ui| {
-                            time_picker(ui, "End:", &mut self.new_plan_end_time, "new_plan_end_time");
-                        });
+                        ui.label("Name:");
+                        ui.text_edit_singleline(&mut self.new_plan_name);
+
+                        ui.label("Start Time:");
+                        time_picker(ui, &mut self.new_plan_start_time, "new_plan_start_time");
+
+                        ui.label("End Time:");
+                        time_picker(ui, &mut self.new_plan_end_time, "new_plan_end_time");
+                        
+                        ui.add_space(5.0);
 
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
                             if ui.button("Add").clicked() {
@@ -155,6 +162,49 @@ impl eframe::App for PlannerApp {
                         });
 
                     });
+            }
+
+            if self.close_update_plan_window {
+                self.update_plan_window_open = false;
+                self.close_update_plan_window = false;
+            }
+
+            if self.update_plan_window_open {
+                if let Some(plan_id) = self.selected_plan_id_for_update {
+                    if let Some(plan) = self.plans.iter_mut().find(|p| p.id == plan_id) {
+                        egui::Window::new("Update Plan")
+                            .default_size(egui::vec2(140.0, 70.0))
+                            .title_bar(false)
+                            .collapsible(false)
+                            .resizable(false)
+                            .open(&mut self.update_plan_window_open)
+                            .show(ui.ctx(), |ui| {
+                                ui.label("Name:");
+                                ui.text_edit_singleline(&mut self.selected_plan_new_name);
+
+                                ui.label("Start Time:");
+                                time_picker(ui, &mut self.selected_plan_new_start_time, "update_plan_start_time");
+
+                                ui.label("End Time:");
+                                time_picker(ui, &mut self.selected_plan_new_end_time, "update_plan_end_time");
+                                
+                                ui.add_space(5.0);
+
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                                    if ui.button("Update").clicked() {
+                                        plan.name = self.selected_plan_new_name.to_ascii_uppercase();
+                                        plan.start_time = SimpleTime::new(self.selected_plan_new_start_time.0, self.selected_plan_new_start_time.1, 0);
+                                        plan.end_time = SimpleTime::new(self.selected_plan_new_end_time.0, self.selected_plan_new_end_time.1, 0);
+                                        self.close_update_plan_window = true;
+                                    }
+                                    if ui.button("Cancel").clicked() {
+                                        self.close_update_plan_window = true;
+                                    }
+                                });
+
+                            });
+                    }
+                }
             }
 
             // First, draw the hours as rows of rectangles
@@ -186,23 +236,13 @@ impl eframe::App for PlannerApp {
             // Draw the plans
 
             for plan in &self.plans {
-                let plan_color = if plan.is_now {
-                    LIGHT_GREEN
-                } else {
-                    LIGHT_GREY
-                };
-
-                let plan_font_color = if plan.is_now {
-                    DARK_GREEN
-                } else {
-                    WHITE
-                };
+                let plan_color = if plan.is_now { LIGHT_GREEN } else { LIGHT_GREY };
+                let plan_font_color = if plan.is_now { DARK_GREEN } else { WHITE };
 
                 let fixed_pos = egui::pos2(
                     65.0,
                     40.0 + 33.0 * (plan.start_time.hour() as f32 + plan.start_time.minute() as f32 / 60.0),
                 );
-
                 let fixed_size = egui::vec2(
                     185.0,
                     33.0 * (plan.end_time.hour() as f32 + plan.end_time.minute() as f32 / 60.0)
@@ -211,12 +251,39 @@ impl eframe::App for PlannerApp {
 
                 let rect = egui::Rect::from_min_size(fixed_pos, fixed_size);
                 
+                // ui.allocate_ui_at_rect(rect, |ui| {
+                //     let response = ui.interact(rect, ui.id(), egui::Sense::click());
+                //     if response.clicked() {
+                //         println!("Plan {} clicked", plan.name());
+                //         self.selected_plan_id_for_update = Some(plan.id);
+                //         self.selected_plan_new_name = plan.name().to_string();
+                //         self.selected_plan_new_start_time = (plan.start_time().hour(), plan.start_time().minute());
+                //         self.selected_plan_new_end_time = (plan.end_time().hour(), plan.end_time().minute());
+                //         self.update_plan_window_open = true;
+                //     }
+
+                //     ui.painter().rect_filled(rect, 3.0, plan_color);
+                //     ui.centered_and_justified(|ui| {
+                //         ui.label(egui::RichText::new(&plan.name)
+                //         .color(plan_font_color)
+                //         );
+                //     });
+                // });
                 ui.allocate_ui_at_rect(rect, |ui| {
                     ui.painter().rect_filled(rect, 3.0, plan_color);
-                    ui.centered_and_justified(|ui| {
-                        ui.label(egui::RichText::new(&plan.name)
-                        .color(plan_font_color)
-                        );
+                    ui.with_layout(egui::Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                        if ui.add(egui::Label::new(
+                            egui::RichText::new(&plan.name)
+                                .color(plan_font_color)
+                                .text_style(egui::TextStyle::Heading) // Make the text bold
+                        ).sense(egui::Sense::click())).clicked() {
+                            println!("Plan {} clicked", plan.name());
+                            self.selected_plan_id_for_update = Some(plan.id);
+                            self.selected_plan_new_name = plan.name().to_string();
+                            self.selected_plan_new_start_time = (plan.start_time().hour(), plan.start_time().minute());
+                            self.selected_plan_new_end_time = (plan.end_time().hour(), plan.end_time().minute());
+                            self.update_plan_window_open = true;
+                        }
                     });
                 });
             }
@@ -239,12 +306,12 @@ impl eframe::App for PlannerApp {
     }
 }
 
-fn time_picker(ui: &mut egui::Ui, label: &str, time: &mut (u8, u8), id_prefix: &str) {
+fn time_picker(ui: &mut egui::Ui, time: &mut (u8, u8), id_prefix: &str) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
             ui.add_space(20.0);
 
-            egui::ComboBox::from_id_source(format!("{}_minute", id_prefix))
-                .width(47.0)
+            egui::ComboBox::from_id_salt(format!("{}_minute", id_prefix))
+                .width(64.0)
                 .selected_text(
                     format!("{} min", time.1)
                 )
@@ -255,8 +322,8 @@ fn time_picker(ui: &mut egui::Ui, label: &str, time: &mut (u8, u8), id_prefix: &
                     }
                 });
 
-            egui::ComboBox::from_id_source(format!("{}_hour", id_prefix))
-                .width(47.0)
+            egui::ComboBox::from_id_salt(format!("{}_hour", id_prefix))
+                .width(64.0)
                 .selected_text(
                     format!("{} hs", time.0)
                 )
@@ -266,14 +333,6 @@ fn time_picker(ui: &mut egui::Ui, label: &str, time: &mut (u8, u8), id_prefix: &
                         ui.selectable_value(&mut time.0, h, h.to_string());
                     }
                 });
-
-            ui.allocate_ui_with_layout(
-                egui::Vec2::new(38.0, 20.0),
-                egui::Layout::left_to_right(egui::Align::Min),
-                |ui| {
-                    ui.label(label);
-                },
-            );
 
     });
 }
