@@ -8,3 +8,4 @@ eframe = "0.30.0"
 chrono = "0.4"
 serde_json = "1.0.137"
 serde = { version = "1.0", features = ["derive"] }
+rfd = "0.15.2"

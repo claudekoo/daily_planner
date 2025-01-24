@@ -1,5 +1,6 @@
 // use super::color_palette::*;
 use eframe::egui;
+use rfd::FileDialog;
 use serde_json;
 use super::color_palette::*;
 use super::structs::*;
@@ -11,7 +12,7 @@ pub fn show_ui(app: PlannerApp) -> Result<(), eframe::Error> {
             maximize_button: Some(false),
             taskbar: Some(false),
             resizable: Some(false),
-            inner_size: Some(egui::vec2(273.0, 838.0)),
+            inner_size: Some(egui::vec2(273.0, 871.0)),
             ..Default::default()
         },
         centered: true,
@@ -82,9 +83,14 @@ impl PlannerApp {
         let now = SimpleTime::from_now();
         if now.as_seconds() - self.last_update.as_seconds() >= 10 {
             self.last_update = now;
-            for activity in &mut self.activities {
-                activity.update_now();
-            }
+            self.update_activities();
+        }
+    }
+
+    fn update_activities(&mut self) {
+        // Update the activities
+        for activity in &mut self.activities {
+            activity.update_now();
         }
     }
 }
@@ -120,17 +126,31 @@ impl eframe::App for PlannerApp {
                 }
             });
 
-            // ui.horizontal(|ui| {
-            //     if ui.button("Save Plan").clicked() {
-            //         let activities_json = serde_json::to_string(&self.activities).unwrap();
-            //         std::fs::write("plan.json", activities_json).expect("Failed to save plan");
-            //     }
-            //     if ui.button("Delete Save").clicked() {
-            //         // just delete all activities and delete the file too
-            //         self.activities = vec![];
-            //         _ = std::fs::remove_file("plan.json");
-            //     }
-            // });
+            ui.horizontal(|ui| {
+                if ui.button("Export Plan").clicked() {
+                    if let Some(path) = FileDialog::new()
+                        .add_filter("JSON", &["json"])
+                        .set_file_name("plan.json")
+                        .save_file()
+                    {
+                        let activities_json = serde_json::to_string(&self.activities).unwrap();
+                        std::fs::write(path, activities_json).expect("Failed to save plan");
+                    }
+                }
+                if ui.button("Import Plan").clicked() {
+                    if let Some(path) = FileDialog::new()
+                        .add_filter("JSON", &["json"])
+                        .pick_file()
+                    {
+                        if let Ok(activities_json) = std::fs::read_to_string(path) {
+                            if let Ok(activities) = serde_json::from_str(&activities_json) {
+                                self.activities = activities;
+                            }
+                        }
+                        self.update_activities();
+                    }
+                }
+            });
 
             if let Some(activity_id) = self.activity_to_delete_id {
                 self.activities.retain(|activity| activity.id != activity_id);
@@ -256,14 +276,13 @@ impl eframe::App for PlannerApp {
             });
 
             // Draw the activities
-
             for activity in &self.activities {
                 let activity_color = if activity.is_now { LIGHT_GREEN } else { LIGHT_GREY };
                 let activity_font_color = if activity.is_now { DARK_GREEN } else { WHITE };
 
                 let fixed_pos = egui::pos2(
                     65.0,
-                    40.0 + 33.0 * (activity.start_time.hour() as f32 + activity.start_time.minute() as f32 / 60.0),
+                    73.0 + 33.0 * (activity.start_time.hour() as f32 + activity.start_time.minute() as f32 / 60.0),
                 );
                 let fixed_size = egui::vec2(
                     200.0,
@@ -292,13 +311,13 @@ impl eframe::App for PlannerApp {
 
             // Draw a horizontal line that marks the current time
             let current_time = SimpleTime::from_now();
-            let current_time_y = 40.0 + 33.0 * (current_time.hour() as f32 + current_time.minute() as f32 / 60.0);
+            let current_time_y = 73.0 + 33.0 * (current_time.hour() as f32 + current_time.minute() as f32 / 60.0);
             ui.allocate_ui_with_layout(
-                egui::vec2(250.0, 2.0),
+                egui::vec2(263.0, 2.0),
                 egui::Layout::top_down(egui::Align::Min),
                 |ui| {
                     ui.painter().line_segment(
-                        [egui::pos2(0.0, current_time_y), egui::pos2(250.0, current_time_y)],
+                        [egui::pos2(0.0, current_time_y), egui::pos2(263.0, current_time_y)],
                         (1.0, RED),
                     );
                 },

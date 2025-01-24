@@ -5,7 +5,8 @@ Daily Planner is a Rust-based desktop application designed to help users maintai
 ## Features
 
 - **Schedule Management**: Create, edit, and delete daily activities.
-- **Save and Auto-Load**: Save your schedule and automatically load it on startup. (import and export to be implemented)
+- **Save and Auto-Load**: Save your schedule and automatically load it on startup.
+- **Import and Export**: Import and export your schedule to and from a file.
 - **Notifications**: Get reminders for schedule changes. (to be implemented)
 
 ## Installation
