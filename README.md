@@ -7,7 +7,7 @@ DailyPlanner is a Rust-based desktop application designed to help users maintain
 - **Schedule Management**: Create, edit, and delete daily activities.
 - **Save and Auto-Load**: Save your schedule and automatically load it on startup.
 - **Import and Export**: Import and export your schedule to and from a file.
-- **Notifications**: Get notified when a new activity should start. (to be implemented)
+- **Notifications**: Get notified when a new activity starts and when an activity ends.
 
 ## Installation
 

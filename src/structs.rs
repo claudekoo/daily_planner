@@ -70,9 +70,17 @@ impl Activity {
             && self.end_time.as_seconds() >= current_time.as_seconds()
     }
 
-    pub fn update_now(&mut self) {
+    /// Returns true if the activity's `is_now` field changed
+    pub fn update_is_now(&mut self) -> bool {
         let current_time = SimpleTime::from_now();
-        self.is_now = self.is_now(current_time);
+        let previous_is_now = self.is_now;
+        let new_is_now = self.is_now(current_time);
+        self.is_now = new_is_now;
+        if previous_is_now != new_is_now {
+            true
+        } else {
+            false
+        }
     }
 
     pub fn name(&self) -> &str {

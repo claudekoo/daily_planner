@@ -1,4 +1,6 @@
+use std::time::Duration;
 use eframe::egui;
+use notify_rust::Notification;
 use rfd::FileDialog;
 use serde_json;
 use super::color_palette::*;
@@ -39,7 +41,17 @@ pub fn show_ui(app: PlannerApp) -> Result<(), eframe::Error> {
     eframe::run_native(
         "DailyPlanner",
         options,
-        Box::new(|_cc| Ok(Box::new(app))),
+        Box::new(|cc| {
+            let ctx = cc.egui_ctx.clone();
+            let ctx_clone = ctx.clone();
+
+            // Spawn a thread to send repaint requests
+            std::thread::spawn(move || loop {
+                std::thread::sleep(Duration::from_secs(1));
+                ctx_clone.request_repaint();
+            });
+            Ok(Box::new(app))
+        }),
     )
 }
 
@@ -75,7 +87,7 @@ impl PlannerApp {
         };
 
         for activity in &mut activities {
-            activity.update_now();
+            activity.update_is_now();
         }
 
         Ok(Self {
@@ -101,14 +113,37 @@ impl PlannerApp {
         let now = SimpleTime::from_now();
         if now.as_seconds() - self.last_update.as_seconds() >= 10 {
             self.last_update = now;
-            self.update_activities();
+            self.update_activities_with_notifications();
+        }
+    }
+
+    fn update_activities_with_notifications(&mut self) {
+        // Update the activities and show notifications if needed
+        for activity in &mut self.activities {
+            if activity.update_is_now() {
+                if activity.is_now {
+                    Notification::new()
+                        .appname("DailyPlanner")
+                        .body(&format!("{} has started.", activity.name))
+                        .icon("icon")
+                        .show()
+                        .expect("Failed to show notification");
+                } else {
+                    Notification::new()
+                        .appname("DailyPlanner")
+                        .body(&format!("{} has ended.", activity.name))
+                        .icon("icon")
+                        .show()
+                        .expect("Failed to show notification");
+                }
+            }
         }
     }
 
     fn update_activities(&mut self) {
         // Update the activities
         for activity in &mut self.activities {
-            activity.update_now();
+            activity.update_is_now();
         }
     }
 }
