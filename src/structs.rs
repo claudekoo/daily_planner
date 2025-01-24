@@ -41,7 +41,7 @@ impl SimpleTime {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Plan {
+pub struct Activity {
     pub id: u32,
     pub name: String,
     pub start_time: SimpleTime,
@@ -49,14 +49,14 @@ pub struct Plan {
     pub is_now: bool,
 }
 
-impl Plan {
+impl Activity {
     pub fn new(
         id: u32,
         name: String,
         start_time: SimpleTime,
         end_time: SimpleTime,
     ) -> Self {
-        Plan {
+        Activity {
             id,
             name,
             start_time,

@@ -1,0 +1,28 @@
+# Daily Planner
+
+Daily Planner is a Rust-based desktop application designed to help users maintain and organize a daily routine.
+
+## Features
+
+- **Schedule Management**: Create, edit, and delete daily activities. (edit and delete to be implemented)
+- **Save and Auto-Load**: Save your schedule and automatically load it on startup. (import and export to be implemented)
+- **Notifications**: Get reminders for schedule changes. (to be implemented)
+
+## Installation
+
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/yourusername/daily_planner.git
+    ```
+2. Navigate to the project directory:
+    ```sh
+    cd daily_planner
+    ```
+3. Build the application:
+    ```sh
+    cargo build --release
+    ```
+4. Run the application:
+    ```sh
+    cargo run
+    ```

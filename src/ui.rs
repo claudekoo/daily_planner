@@ -25,28 +25,28 @@ pub fn show_ui(app: PlannerApp) -> Result<(), eframe::Error> {
 }
 
 pub struct PlannerApp {
-    plans: Vec<Plan>,
+    activities: Vec<Activity>,
     last_update: SimpleTime,
-    add_plan_window_open: bool,
-    close_add_plan_window: bool,
-    new_plan_name: String,
-    new_plan_start_time: (u8, u8),
-    new_plan_end_time: (u8, u8),
-    selected_plan_id_for_update: Option<u32>,
-    selected_plan_new_name: String,
-    selected_plan_new_start_time: (u8, u8),
-    selected_plan_new_end_time: (u8, u8),
-    update_plan_window_open: bool,
-    close_update_plan_window: bool,
+    add_activity_window_open: bool,
+    close_add_activity_window: bool,
+    new_activity_name: String,
+    new_activity_start_time: (u8, u8),
+    new_activity_end_time: (u8, u8),
+    selected_activity_id_for_update: Option<u32>,
+    selected_activity_new_name: String,
+    selected_activity_new_start_time: (u8, u8),
+    selected_activity_new_end_time: (u8, u8),
+    update_activity_window_open: bool,
+    close_update_activity_window: bool,
 }
 
 impl PlannerApp {
     pub fn new() -> std::io::Result<Self> {
 
-        // Load plans from file
-        let mut plans: Vec<Plan> = if let Ok(plans_json) = std::fs::read_to_string("plans.json") {
-            if let Ok(plans) = serde_json::from_str(&plans_json) {
-                plans
+        // Load activities from file
+        let mut activities: Vec<Activity> = if let Ok(activities_json) = std::fs::read_to_string("plan.json") {
+            if let Ok(activities) = serde_json::from_str(&activities_json) {
+                activities
             } else {
                 Vec::new()
             }
@@ -54,34 +54,34 @@ impl PlannerApp {
             Vec::new()
         };
 
-        for plan in &mut plans {
-            plan.update_now();
+        for activity in &mut activities {
+            activity.update_now();
         }
 
         Ok(Self {
-            plans,
+            activities,
             last_update: SimpleTime::from_now(),
-            add_plan_window_open: false,
-            close_add_plan_window: false,
-            new_plan_name: "".to_string(),
-            new_plan_start_time: (0, 0),
-            new_plan_end_time: (0, 0),
-            selected_plan_id_for_update: None,
-            selected_plan_new_name: "".to_string(),
-            selected_plan_new_start_time: (0, 0),
-            selected_plan_new_end_time: (0, 0),
-            update_plan_window_open: false,
-            close_update_plan_window: false,
+            add_activity_window_open: false,
+            close_add_activity_window: false,
+            new_activity_name: "".to_string(),
+            new_activity_start_time: (0, 0),
+            new_activity_end_time: (0, 0),
+            selected_activity_id_for_update: None,
+            selected_activity_new_name: "".to_string(),
+            selected_activity_new_start_time: (0, 0),
+            selected_activity_new_end_time: (0, 0),
+            update_activity_window_open: false,
+            close_update_activity_window: false,
         })
     }
 
-    fn update_plans_every_ten_seconds(&mut self) {
-        // Update the plans after 10 seconds from last update
+    fn update_activities_every_ten_seconds(&mut self) {
+        // Update the activities after 10 seconds from last update
         let now = SimpleTime::from_now();
         if now.as_seconds() - self.last_update.as_seconds() >= 10 {
             self.last_update = now;
-            for plan in &mut self.plans {
-                plan.update_now();
+            for activity in &mut self.activities {
+                activity.update_now();
             }
         }
     }
@@ -89,7 +89,7 @@ impl PlannerApp {
 
 impl eframe::App for PlannerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.update_plans_every_ten_seconds();
+        self.update_activities_every_ten_seconds();
 
         let visuals = egui::Visuals {
             panel_fill: DARK_GREY,
@@ -103,102 +103,102 @@ impl eframe::App for PlannerApp {
             spacing.item_spacing = egui::vec2(10.0, 10.0);
             spacing.button_padding = egui::vec2(10.0, 5.0);
 
-            // Add Plan / Save Plans buttons
+            // Add Activity / Save Plan buttons
             ui.horizontal(|ui| {
-                if ui.button("New Plan").clicked() {
-                    self.add_plan_window_open = true;
+                if ui.button("New Activity").clicked() {
+                    self.add_activity_window_open = true;
                 }
-                if ui.button("Save Plans").clicked() {
-                    let plans_json = serde_json::to_string(&self.plans).unwrap();
-                    std::fs::write("plans.json", plans_json).expect("Failed to save plans");
+                if ui.button("Save Plan").clicked() {
+                    let activities_json = serde_json::to_string(&self.activities).unwrap();
+                    std::fs::write("plan.json", activities_json).expect("Failed to save plan");
                 }
                 if ui.button("Delete All").clicked() {
-                    // just delete all plans and delete the file too
-                    self.plans = vec![];
-                    _ = std::fs::remove_file("plans.json");
+                    // just delete all activities and delete the file too
+                    self.activities = vec![];
+                    _ = std::fs::remove_file("plan.json");
                 }
             });
 
-            if self.close_add_plan_window {
-                self.add_plan_window_open = false;
-                self.close_add_plan_window = false;
+            if self.close_add_activity_window {
+                self.add_activity_window_open = false;
+                self.close_add_activity_window = false;
             }
 
-            if self.add_plan_window_open {
-                egui::Window::new("New Plan")
+            if self.add_activity_window_open {
+                egui::Window::new("New Activity")
                     .default_size(egui::vec2(140.0, 70.0))
                     .title_bar(false)
                     .collapsible(false)
                     .resizable(false)
-                    .open(&mut self.add_plan_window_open)
+                    .open(&mut self.add_activity_window_open)
                     .show(ui.ctx(), |ui| {
                         ui.label("Name:");
-                        ui.text_edit_singleline(&mut self.new_plan_name);
+                        ui.text_edit_singleline(&mut self.new_activity_name);
 
                         ui.label("Start Time:");
-                        time_picker(ui, &mut self.new_plan_start_time, "new_plan_start_time");
+                        time_picker(ui, &mut self.new_activity_start_time, "new_activity_start_time");
 
                         ui.label("End Time:");
-                        time_picker(ui, &mut self.new_plan_end_time, "new_plan_end_time");
+                        time_picker(ui, &mut self.new_activity_end_time, "new_activity_end_time");
                         
                         ui.add_space(5.0);
 
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
                             if ui.button("Add").clicked() {
-                                self.plans.push(Plan::new(
-                                    self.plans.len() as u32,
-                                    self.new_plan_name.to_ascii_uppercase(),
-                                    SimpleTime::new(self.new_plan_start_time.0, self.new_plan_start_time.1, 0),
-                                    SimpleTime::new(self.new_plan_end_time.0, self.new_plan_end_time.1, 0),
+                                self.activities.push(Activity::new(
+                                    self.activities.len() as u32,
+                                    self.new_activity_name.to_ascii_uppercase(),
+                                    SimpleTime::new(self.new_activity_start_time.0, self.new_activity_start_time.1, 0),
+                                    SimpleTime::new(self.new_activity_end_time.0, self.new_activity_end_time.1, 0),
                                 ));
-                                self.new_plan_name = "".to_string();
-                                self.new_plan_end_time = (0, 0);
-                                self.new_plan_start_time = (0, 0);
-                                self.close_add_plan_window = true;
+                                self.new_activity_name = "".to_string();
+                                self.new_activity_end_time = (0, 0);
+                                self.new_activity_start_time = (0, 0);
+                                self.close_add_activity_window = true;
                             }
                             if ui.button("Cancel").clicked() {
-                                self.close_add_plan_window = true;
+                                self.close_add_activity_window = true;
                             }
                         });
 
                     });
             }
 
-            if self.close_update_plan_window {
-                self.update_plan_window_open = false;
-                self.close_update_plan_window = false;
+            if self.close_update_activity_window {
+                self.update_activity_window_open = false;
+                self.close_update_activity_window = false;
             }
 
-            if self.update_plan_window_open {
-                if let Some(plan_id) = self.selected_plan_id_for_update {
-                    if let Some(plan) = self.plans.iter_mut().find(|p| p.id == plan_id) {
-                        egui::Window::new("Update Plan")
+            if self.update_activity_window_open {
+                if let Some(activity_id) = self.selected_activity_id_for_update {
+                    if let Some(activity) = self.activities.iter_mut().find(|p| p.id == activity_id) {
+                        egui::Window::new("Update Activity")
                             .default_size(egui::vec2(140.0, 70.0))
                             .title_bar(false)
                             .collapsible(false)
                             .resizable(false)
-                            .open(&mut self.update_plan_window_open)
+                            .open(&mut self.update_activity_window_open)
                             .show(ui.ctx(), |ui| {
                                 ui.label("Name:");
-                                ui.text_edit_singleline(&mut self.selected_plan_new_name);
+                                ui.text_edit_singleline(&mut self.selected_activity_new_name);
 
                                 ui.label("Start Time:");
-                                time_picker(ui, &mut self.selected_plan_new_start_time, "update_plan_start_time");
+                                time_picker(ui, &mut self.selected_activity_new_start_time, "update_activity_start_time");
 
                                 ui.label("End Time:");
-                                time_picker(ui, &mut self.selected_plan_new_end_time, "update_plan_end_time");
+                                time_picker(ui, &mut self.selected_activity_new_end_time, "update_activity_end_time");
                                 
                                 ui.add_space(5.0);
 
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
                                     if ui.button("Update").clicked() {
-                                        plan.name = self.selected_plan_new_name.to_ascii_uppercase();
-                                        plan.start_time = SimpleTime::new(self.selected_plan_new_start_time.0, self.selected_plan_new_start_time.1, 0);
-                                        plan.end_time = SimpleTime::new(self.selected_plan_new_end_time.0, self.selected_plan_new_end_time.1, 0);
-                                        self.close_update_plan_window = true;
+                                        activity.name = self.selected_activity_new_name.to_ascii_uppercase();
+                                        activity.start_time = SimpleTime::new(self.selected_activity_new_start_time.0, self.selected_activity_new_start_time.1, 0);
+                                        activity.end_time = SimpleTime::new(self.selected_activity_new_end_time.0, self.selected_activity_new_end_time.1, 0);
+                                        self.close_update_activity_window = true;
                                     }
                                     if ui.button("Cancel").clicked() {
-                                        self.close_update_plan_window = true;
+                                        self.close_update_activity_window = true;
                                     }
                                 });
 
@@ -233,56 +233,37 @@ impl eframe::App for PlannerApp {
                 }
             });
 
-            // Draw the plans
+            // Draw the activities
 
-            for plan in &self.plans {
-                let plan_color = if plan.is_now { LIGHT_GREEN } else { LIGHT_GREY };
-                let plan_font_color = if plan.is_now { DARK_GREEN } else { WHITE };
+            for activity in &self.activities {
+                let activity_color = if activity.is_now { LIGHT_GREEN } else { LIGHT_GREY };
+                let activity_font_color = if activity.is_now { DARK_GREEN } else { WHITE };
 
                 let fixed_pos = egui::pos2(
                     65.0,
-                    40.0 + 33.0 * (plan.start_time.hour() as f32 + plan.start_time.minute() as f32 / 60.0),
+                    40.0 + 33.0 * (activity.start_time.hour() as f32 + activity.start_time.minute() as f32 / 60.0),
                 );
                 let fixed_size = egui::vec2(
                     185.0,
-                    33.0 * (plan.end_time.hour() as f32 + plan.end_time.minute() as f32 / 60.0)
-                        - 33.0 * (plan.start_time.hour() as f32 + plan.start_time.minute() as f32 / 60.0),
+                    33.0 * (activity.end_time.hour() as f32 + activity.end_time.minute() as f32 / 60.0)
+                        - 33.0 * (activity.start_time.hour() as f32 + activity.start_time.minute() as f32 / 60.0),
                 );
 
                 let rect = egui::Rect::from_min_size(fixed_pos, fixed_size);
-                
-                // ui.allocate_ui_at_rect(rect, |ui| {
-                //     let response = ui.interact(rect, ui.id(), egui::Sense::click());
-                //     if response.clicked() {
-                //         println!("Plan {} clicked", plan.name());
-                //         self.selected_plan_id_for_update = Some(plan.id);
-                //         self.selected_plan_new_name = plan.name().to_string();
-                //         self.selected_plan_new_start_time = (plan.start_time().hour(), plan.start_time().minute());
-                //         self.selected_plan_new_end_time = (plan.end_time().hour(), plan.end_time().minute());
-                //         self.update_plan_window_open = true;
-                //     }
 
-                //     ui.painter().rect_filled(rect, 3.0, plan_color);
-                //     ui.centered_and_justified(|ui| {
-                //         ui.label(egui::RichText::new(&plan.name)
-                //         .color(plan_font_color)
-                //         );
-                //     });
-                // });
                 ui.allocate_ui_at_rect(rect, |ui| {
-                    ui.painter().rect_filled(rect, 3.0, plan_color);
+                    ui.painter().rect_filled(rect, 3.0, activity_color);
                     ui.with_layout(egui::Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
                         if ui.add(egui::Label::new(
-                            egui::RichText::new(&plan.name)
-                                .color(plan_font_color)
+                            egui::RichText::new(&activity.name)
+                                .color(activity_font_color)
                                 .text_style(egui::TextStyle::Heading) // Make the text bold
                         ).sense(egui::Sense::click())).clicked() {
-                            println!("Plan {} clicked", plan.name());
-                            self.selected_plan_id_for_update = Some(plan.id);
-                            self.selected_plan_new_name = plan.name().to_string();
-                            self.selected_plan_new_start_time = (plan.start_time().hour(), plan.start_time().minute());
-                            self.selected_plan_new_end_time = (plan.end_time().hour(), plan.end_time().minute());
-                            self.update_plan_window_open = true;
+                            self.selected_activity_id_for_update = Some(activity.id);
+                            self.selected_activity_new_name = activity.name().to_string();
+                            self.selected_activity_new_start_time = (activity.start_time().hour(), activity.start_time().minute());
+                            self.selected_activity_new_end_time = (activity.end_time().hour(), activity.end_time().minute());
+                            self.update_activity_window_open = true;
                         }
                     });
                 });
